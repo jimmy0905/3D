@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
 
-// Check if the user is accessing from a mobile device
+// Check if the user is accessing from a mobile device(IOS)
 function requestMotionAccess() {
 	if (typeof DeviceMotionEvent.requestPermission === 'function') {
 	  // For newer versions of Safari (iOS 13+)
@@ -132,7 +132,9 @@ var movement = {
 	forward: false,
 	backward: false,
 	left: false,
-	right: false
+	right: false,
+	rotateLeft: false,
+	rotateRight: false
 };
 
 // Keydown event listener
@@ -278,10 +280,10 @@ function animate() {
 		controls.getObject().position.add(cameraDirection.cross(new THREE.Vector3(0, 1, 0)).normalize().multiplyScalar(moveSpeed));
 	}
 	if (movement.rotateLeft) {
-		controls.getObject().rotation.y -= rotateSpeed;
+		controls.getObject().rotation.y += rotateSpeed;
 	}
 	if (movement.rotateRight) {
-		controls.getObject().rotation.y += rotateSpeed;
+		controls.getObject().rotation.y -= rotateSpeed;
 	}
 	//console.log("x:" + camera.position.x)
 	//console.log("y:" + camera.position.y)
