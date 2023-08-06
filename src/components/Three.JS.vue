@@ -19,7 +19,7 @@ document.body.appendChild(renderer.domElement);
 
 // Load the 3D (GLB) model (building)
 var loader = new GLTFLoader();
-loader.load('src/3D_Model/grand_theft_auto_san_andreas__grove_street.glb', function (gltf) {
+loader.load('/src/3D_Model/grand_theft_auto_san_andreas__grove_street.glb', function (gltf) {
 	gltf.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
 	gltf.scene.position.set(0, 0, 0); // Adjust the position of the model
 	scene.add(gltf.scene);
@@ -27,7 +27,7 @@ loader.load('src/3D_Model/grand_theft_auto_san_andreas__grove_street.glb', funct
 	console.error(error);
 });
 // Load the pointer
-loader.load('src/3D_Model/map_pointer.glb', function (gltf2) {
+loader.load('/src/3D_Model/map_pointer.glb', function (gltf2) {
 	gltf2.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
 	gltf2.scene.position.set(4.4, 1, 0); // Adjust the position of the model
 	scene.add(gltf2.scene);
