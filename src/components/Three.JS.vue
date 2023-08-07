@@ -1,5 +1,7 @@
 <template>
-  <div ref="canvasContainer"></div>
+  <p id="a"></p>
+  <p id="b"></p>
+  <p id="g"></p>
 </template>
 
 <script>
@@ -17,7 +19,6 @@ var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHei
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-
 // Load the 3D (GLB) model (building)
 var loader = new GLTFLoader();
 loader.load(map, function (gltf) {
@@ -193,13 +194,16 @@ function handleOrientation(event) {
     var alpha = (event.alpha || 0) - initialAlpha;
     var beta = (event.beta || 0) - initialBeta;
     var gamma = (event.gamma || 0) - initialGamma;
-
+	document.getElementById('a').innerHTML = alpha;
+	document.getElementById('b').innerHTML = beta;
+	document.getElementById('g').innerHTML = gamma;
+	console.log(alpha);
     // Convert rotation values to radians
     alpha = THREE.MathUtils.degToRad(alpha);
     beta = THREE.MathUtils.degToRad(beta);
     gamma = THREE.MathUtils.degToRad(gamma);
-
-    // Update the camera's rotation based on device orientation
+	
+	// Update the camera's rotation based on device orientation
     camera.rotation.set(beta, alpha, -gamma);
 }
 var initialAccelerationX = 0;
