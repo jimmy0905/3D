@@ -6,7 +6,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls';
-
+import map from '@/assets/3D_Model/grand_theft_auto_san_andreas__grove_street.glb';
+import pointer from '@/assets/3D_Model/map_pointer.glb';
 export default {
   mounted() {
     // Initialize the 3D camera...
@@ -19,7 +20,7 @@ document.body.appendChild(renderer.domElement);
 
 // Load the 3D (GLB) model (building)
 var loader = new GLTFLoader();
-loader.load('/src/3D_Model/grand_theft_auto_san_andreas__grove_street.glb', function (gltf) {
+loader.load(map, function (gltf) {
 	gltf.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
 	gltf.scene.position.set(0, 0, 0); // Adjust the position of the model
 	scene.add(gltf.scene);
@@ -27,7 +28,7 @@ loader.load('/src/3D_Model/grand_theft_auto_san_andreas__grove_street.glb', func
 	console.error(error);
 });
 // Load the pointer
-loader.load('/src/3D_Model/map_pointer.glb', function (gltf2) {
+loader.load(pointer, function (gltf2) {
 	gltf2.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
 	gltf2.scene.position.set(4.4, 1, 0); // Adjust the position of the model
 	scene.add(gltf2.scene);

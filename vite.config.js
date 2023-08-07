@@ -14,6 +14,7 @@ export default defineConfig(({ mode }) => {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
     },
-    base: isProduction ? '/3D/' : '/',
+    base: isProduction ? '/3D/' : '/'
+    ,assetsInclude: ['**/*.glb'],
   };
 });
