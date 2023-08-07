@@ -1,7 +1,7 @@
 <template>
-  <p id="a"></p>
-  <p id="b"></p>
-  <p id="g"></p>
+  <h1 id="a">A</h1>
+  <h1 id="b">B</h1>
+  <h1 id="g">G</h1>
 </template>
 
 <script>
@@ -182,7 +182,22 @@ var initialAlpha = 0;
 var initialBeta = 0;
 var initialGamma = 0;
 
-window.addEventListener('deviceorientation', handleOrientation, true);
+if (typeof DeviceMotionEvent.requestPermission === 'function') {
+  DeviceMotionEvent.requestPermission()
+    .then(permissionState => {
+      if (permissionState === 'granted') {
+        // Permission granted, start listening to motion and orientation events
+      } else {
+        // Permission denied
+      }
+    })
+    .catch(console.error);
+} else {
+  // DeviceMotionEvent.requestPermission is not supported
+  // Handle accordingly
+}
+window.addEventListener('deviceorientation', handleOrientation, false);
+
 function handleOrientation(event) {
     if (initialAlpha === 0 && initialBeta === 0 && initialGamma === 0) {
         initialAlpha = event.alpha || 0;
