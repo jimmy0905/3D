@@ -2,9 +2,11 @@
 import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 import ThreeJS from './components/Three.JS.vue'
+import RequestPermission from './components/requestPermission.vue';
 </script>
 
 <template>
+  <RequestPermission></RequestPermission>
   <ThreeJS></ThreeJS>
 </template>
 

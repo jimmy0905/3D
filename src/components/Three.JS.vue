@@ -1,7 +1,5 @@
 <template>
-  <h1 id="a">A</h1>
-  <h1 id="b">B</h1>
-  <h1 id="g">G</h1>
+
 </template>
 
 <script>
@@ -22,7 +20,7 @@ document.body.appendChild(renderer.domElement);
 // Load the 3D (GLB) model (building)
 var loader = new GLTFLoader();
 loader.load(map, function (gltf) {
-	gltf.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
+	gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
 	gltf.scene.position.set(0, 0, 0); // Adjust the position of the model
 	scene.add(gltf.scene);
 }, undefined, function (error) {
@@ -30,8 +28,8 @@ loader.load(map, function (gltf) {
 });
 // Load the pointer
 loader.load(pointer, function (gltf2) {
-	gltf2.scene.scale.set(0.1, 0.1, 0.1); // Adjust the scale of the model
-	gltf2.scene.position.set(4.4, 1, 0); // Adjust the position of the model
+	gltf2.scene.scale.set(1, 1, 1); // Adjust the scale of the model
+	gltf2.scene.position.set(44, 10, 0); // Adjust the position of the model
 	scene.add(gltf2.scene);
 }, undefined, function (error) {
 	console.error(error);
@@ -42,9 +40,9 @@ var ambientLight = new THREE.AmbientLight(0xffffff); // Set the ambient light co
 scene.add(ambientLight);
 
 // Adjust the camera
-camera.position.x = 1.8;
-camera.position.y = 1.0;
-camera.position.z = 7.5;
+camera.position.x = 18;
+camera.position.y = 10;
+camera.position.z = 75;
 
 // PointerLockControls
 var controls = new PointerLockControls(camera, renderer.domElement);
@@ -179,23 +177,9 @@ function handleResize() {
 
 //mobile view
 var initialAlpha = 0;
-var initialBeta = 0;
+var initialBeta = 90;
 var initialGamma = 0;
 
-if (typeof DeviceMotionEvent.requestPermission === 'function') {
-  DeviceMotionEvent.requestPermission()
-    .then(permissionState => {
-      if (permissionState === 'granted') {
-        // Permission granted, start listening to motion and orientation events
-      } else {
-        // Permission denied
-      }
-    })
-    .catch(console.error);
-} else {
-  // DeviceMotionEvent.requestPermission is not supported
-  // Handle accordingly
-}
 window.addEventListener('deviceorientation', handleOrientation, false);
 
 function handleOrientation(event) {
@@ -209,9 +193,9 @@ function handleOrientation(event) {
     var alpha = (event.alpha || 0) - initialAlpha;
     var beta = (event.beta || 0) - initialBeta;
     var gamma = (event.gamma || 0) - initialGamma;
-	document.getElementById('a').innerHTML = alpha;
-	document.getElementById('b').innerHTML = beta;
-	document.getElementById('g').innerHTML = gamma;
+	// document.getElementById('a').innerHTML = alpha;
+	// document.getElementById('b').innerHTML = beta;
+	// document.getElementById('g').innerHTML = gamma;
 	console.log(alpha);
     // Convert rotation values to radians
     alpha = THREE.MathUtils.degToRad(alpha);
@@ -224,7 +208,7 @@ function handleOrientation(event) {
 var initialAccelerationX = 0;
 var initialAccelerationY = 0;
 var initialAccelerationZ = 0;
-window.addEventListener('devicemotion', handleMotion, true);
+window.addEventListener('devicemotion', handleMotion, false);
 
 function handleMotion(event) {
     if (initialAccelerationX === 0 && initialAccelerationY === 0 && initialAccelerationZ === 0) {
@@ -242,9 +226,9 @@ function handleMotion(event) {
     // For example, you can invert or scale the acceleration values to control the camera movement speed
 
     // Update the camera's position based on device motion
-    camera.position.x += accelerationX;
-    camera.position.y += accelerationY;
-    camera.position.z += accelerationZ;
+    camera.position.x += accelerationX * 0.1;
+    //camera.position.y += accelerationY * 0.1;
+    camera.position.z += accelerationZ * 0.1;
 }
 // Initialize the camera direction and rotation vectors
 var cameraDirection = new THREE.Vector3();
@@ -253,7 +237,7 @@ function animate() {
 	requestAnimationFrame(animate);
 
 	// Manually update the camera position and rotation based on user input
-	var moveSpeed = 0.01; // Adjust the movement speed as needed
+	var moveSpeed = 0.1; // Adjust the movement speed as needed
 	var rotateSpeed = 0.01; // Adjust the rotation speed as needed
 
 	if (movement.forward) {
@@ -278,9 +262,6 @@ function animate() {
 	if (movement.rotateRight) {
 		controls.getObject().rotation.y -= rotateSpeed;
 	}
-	//console.log("x:" + camera.position.x)
-	//console.log("y:" + camera.position.y)
-	//console.log("z:" + camera.position.z)
 	renderer.render(scene, camera);
 }
 animate();
