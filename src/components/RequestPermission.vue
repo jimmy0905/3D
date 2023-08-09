@@ -1,13 +1,10 @@
 <template>
     <div>
-        <button @click="showModal">Open Modal</button>
         <div v-if="isModalOpen" class="modal">
             <div class="modal-content">
                 <span class="close" @click="closeModal">&times;</span>
-                <h2>Modal Title</h2>
-                <p>Modal content goes here.</p>
+                <h2>Request Permission</h2>
                 <button @click="requestDeviceMotion">DeviceMotion</button>
-                <button @click="requestDeviceOrientation">DeviceOrientation</button>
             </div>
         </div>
     </div>
@@ -17,7 +14,7 @@
 export default {
     data() {
         return {
-            isModalOpen: false,
+            isModalOpen: true,
             alpha : 0,
             beta : 0,
             gamma : 0,
