@@ -1,11 +1,12 @@
 <template>
-    <p id="AX"> AX:</p>
-    <p id="MaxAX">MaxAX:</p>
-    <p id="AY"> AY:</p>
-    <p id="MaxAY">MaxAY:</p>
-    <p id="AZ"> AZ:</p>
-    <p id="MaxAZ">MaxAZ:</p>
-    <p id="Y/Z">Y/Z:</p>
+  <div style="position: absolute; z-index: 100; background-color: white">
+    <p id="AX" style="color: black; background-color: white">AX:</p>
+    <p id="AY" style="color: black; background-color: white">AY:</p>
+    <p id="AZ" style="color: black; background-color: white">AZ:</p>
+    <p id="camera" style="color: black; background-color: white">X: Y: Z:</p>
+    <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
+    <p id="Step" style="color: black; background-color: white">Step:</p>
+  </div>
 </template>
 <script>
 import * as THREE from "three";
@@ -16,6 +17,7 @@ import pointer from "@/assets/3D_Model/map_pointer.glb";
 export default {
   mounted() {
     //init scence
+
     var scene = new THREE.Scene();
     scene.background = new THREE.Color(0xabcdef);
     //init camera
@@ -31,12 +33,15 @@ export default {
     document.body.appendChild(renderer.domElement);
     //init loader
     var loader = new GLTFLoader();
+    var mapObject;
+    var pointerObject;
     loadMap(map);
     loadPointer(pointer);
     // Add light
     var ambientLight = new THREE.AmbientLight(0xffffff); // Set the ambient light color and intensity
     scene.add(ambientLight);
     //adjust camera
+    var initialY = 10;
     adjustCameraPosition();
     // initi PointerLockControls
     var controls = new PointerLockControls(camera, renderer.domElement);
@@ -64,7 +69,6 @@ export default {
     const mouse = new THREE.Vector2();
     mouse.x = window.innerWidth / 2;
     mouse.y = window.innerHeight / 2;
-    console.log(mouse);
     // Keydown event listener
     document.addEventListener("keydown", function (event) {
       handleKeyDown(event.code);
@@ -81,13 +85,26 @@ export default {
     var initialGamma = 0;
     window.addEventListener("deviceorientation", handleOrientation, false);
     // Add device Motion Listener
-    var initialAccelerationX = 0;
-    var initialAccelerationZ = 0;
+
     window.addEventListener("devicemotion", handleMotion, false);
     // Initialize the camera direction and rotation vectors
     var cameraDirection = new THREE.Vector3();
-    //
+    // Add Click Evenet on 3D canvas to detect 3D object
+    document
+      .querySelectorAll("canvas")[0]
+      .addEventListener("click", (event) => handleClickOnObject(event));
+    //drawing Line
+    drawLine();
+    // step counting
+    const stepThreshold = 4;
+    let previousAcc = null;
+    let stepCount = 0;
+
     animate();
+    function getMagnitude(acc) {
+      const { x, y, z } = acc;
+      return Math.sqrt(x * x + y * y + z * z);
+    }
     function loadMap(mapModel) {
       loader.load(
         mapModel,
@@ -95,9 +112,9 @@ export default {
           gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
           gltf.scene.position.set(0, 0, 0); // Adjust the position of the model
           scene.add(gltf.scene);
+          console.log(gltf.scene);
+          mapObject = gltf.scene;
           const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
-          const boundingBoxHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
-          scene.add(boundingBoxHelper);
           const max = boundingBox.max;
           const min = boundingBox.min;
           mapConstraint.maxX = max.x;
@@ -119,7 +136,12 @@ export default {
         function (gltf) {
           gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
           gltf.scene.position.set(44, 10, 0); // Adjust the position of the model
+          pointerObject = gltf.scene;
           scene.add(gltf.scene);
+          console.log(gltf.scene);
+          const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
+          const boundingBoxHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
+          //scene.add(boundingBoxHelper);
         },
         undefined,
         function (error) {
@@ -128,9 +150,9 @@ export default {
       );
     }
     function adjustCameraPosition() {
-      camera.position.x = 18;
-      camera.position.y = 10;
-      camera.position.z = 75;
+      camera.position.x = 0;
+      camera.position.y = initialY;
+      camera.position.z = 0;
     }
     function handleKeyDown(keyCode) {
       switch (keyCode) {
@@ -180,8 +202,6 @@ export default {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
-      mouse.x = window.innerWidth / 2;
-      mouse.y = window.innerHeight / 2;
     }
     function handleOrientation(event) {
       if (initialAlpha === 0 && initialBeta === 0 && initialGamma === 0) {
@@ -200,24 +220,63 @@ export default {
       // Update the camera's rotation based on device orientation
       camera.rotation.set(beta, alpha, -gamma);
     }
-    var MaxAX = 0;
-    var MaxAZ = 0;
-    var MaxAY = 0;
     function handleMotion(event) {
+      const activeThreshold = 1;
+      if (
+        Math.abs(event.acceleration.x) < activeThreshold &&
+        Math.abs(event.acceleration.x) < activeThreshold &&
+        Math.abs(event.acceleration.x) < activeThreshold
+      ) {
+        return;
+      }
       // Adjust the acceleration values or apply additional transformations as needed
       // Update the camera's position based on device motion
-      document.getElementById("AX").innerHTML = "AX:" + event.acceleration.x.toFixed(2);
-      document.getElementById("AY").innerHTML = "AY:" + event.acceleration.y.toFixed(2);
-      document.getElementById("AZ").innerHTML = "AZ:" + event.acceleration.z.toFixed(2);
-      MaxAX = Math.max(MaxAX,event.acceleration.x.toFixed(2));
-      MaxAY = Math.max(MaxAY,event.acceleration.y.toFixed(2));
-      MaxAZ = Math.max(MaxAZ,event.acceleration.z.toFixed(2));
-      document.getElementById("MaxAX").innerHTML = "MAXAX:" + MaxAX.toFixed(2);
-      document.getElementById("MaxAY").innerHTML = "MAXAY:" + MaxAY.toFixed(2);
-      document.getElementById("MaxAZ").innerHTML = "MAXAZ:" + MaxAZ.toFixed(2);
-      document.getElementById("Y/Z").innerHTML = "Y/Z:" + event.acceleration.y.toFixed(2)/-event.acceleration.z.toFixed(2);
-      //camera.position.x += accelerationX * 0.1;
-      camera.position.z += -event.acceleration.y * 0.05;
+      document.getElementById("AX").innerHTML = "AX:" + event.acceleration.x;
+      document.getElementById("AY").innerHTML = "AY:" + event.acceleration.y;
+      document.getElementById("AZ").innerHTML = "AZ:" + event.acceleration.z;
+      // update camera's positoin based on acceleration values
+      // camera.getWorldDirection(cameraDirection);
+      // controls
+      //   .getObject()
+      //   .position.add(
+      //     cameraDirection.multiplyScalar(-event.acceleration.z * 0.3)
+      //   );
+      // controls.getObject().position.y = initialY; // Set the y position to the desired value
+      document.getElementById("camera").innerHTML =
+        "X:" +
+        camera.position.x +
+        "\nY:" +
+        camera.position.y +
+        "\nZ:" +
+        camera.position.z;
+      //
+      const acc = event.accelerationIncludingGravity;
+
+      // Ignore null or undefined values
+      if (!acc) return;
+
+      // Calculate the magnitude of the current acceleration
+      const currentAcc = getMagnitude(acc);
+
+      // If previous acceleration data exists, compare with current acceleration
+      if (previousAcc) {
+        // Calculate the difference in acceleration
+        const accDiff = Math.abs(currentAcc - previousAcc);
+        document.getElementById("accDiff").innerHTML = "accDiff:" + accDiff;
+        // Check if the difference exceeds the threshold
+        if (accDiff > stepThreshold) {
+          // Increment step count
+          stepCount++;
+          document.getElementById("Step").innerHTML = "Step" + stepCount;
+          camera.getWorldDirection(cameraDirection);
+          controls
+            .getObject()
+            .position.add(cameraDirection.multiplyScalar(0.1));
+        }
+      }
+
+      // Update previous acceleration
+      previousAcc = currentAcc;
     }
     function updateCameraPosition() {
       camera.position.x = Math.max(
@@ -243,14 +302,60 @@ export default {
 
       // Perform intersection test
       const intersects = raycaster.intersectObjects(scene.children, true);
-      var distanceThreshold = 30 ;
+      var distanceThreshold = 100;
       // Handle collisions
-      if (intersects.length > 0 && intersects[0].distance < distanceThreshold)  {
-        // Collision detected
-        // Take appropriate action, such as preventing camera movement or adjusting the camera's position
-        // For example, you can set a new camera position away from the intersected object
-        console.log(intersects[0]);
+      if (intersects.length > 0 && intersects[0].distance < distanceThreshold) {
+        //console.log(intersects)
+        intersects.forEach((intersect) => {
+          console.log(findTopParent(intersect.object));
+          if (
+            findTopParent(intersect.object).name ==
+            mapObject.children[0].children[0].name
+          ) {
+            //console.log("It is background");
+          }
+          if (
+            findTopParent(intersect.object).name ==
+            pointerObject.children[0].children[0].name
+          ) {
+            console.log("It is pointer");
+            alert("it is pointer");
+          }
+        });
       }
+    }
+    function findTopParent(object) {
+      let topParent = object;
+
+      while (topParent.parent.name !== "Sketchfab_model") {
+        topParent = topParent.parent;
+      }
+
+      return topParent;
+    }
+    function handleClickOnObject(event) {
+      //console.log(mapObject.children[0].children[0].name);
+      mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+      mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+      performCollisionDetection();
+    }
+    function drawLine() {
+      const material = new THREE.LineBasicMaterial({
+        color: 0xff00ff,
+        linewidth: 10,
+        linecap: "round", //ignored by WebGLRenderer
+        linejoin: "round", //ignored by WebGLRenderer
+      });
+
+      const points = [];
+      points.push(new THREE.Vector3(0, 7, 0));
+      points.push(new THREE.Vector3(0, 7, 10));
+      points.push(new THREE.Vector3(44, 7, 0));
+
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+
+      const line = new THREE.Line(geometry, material);
+      scene.add(line);
     }
     function animate() {
       requestAnimationFrame(animate);
@@ -300,7 +405,7 @@ export default {
         controls.getObject().rotation.y -= rotateSpeed;
       }
       updateCameraPosition();
-      performCollisionDetection();
+      //performCollisionDetection();
       renderer.render(scene, camera);
     }
   },
