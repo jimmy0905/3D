@@ -1,5 +1,12 @@
 <template>
-  <div style="position: absolute; z-index: 100; background-color: white">
+  <div
+    style="
+      position: absolute;
+      z-index: 100;
+      background-color: white;
+      opacity: 0.5;
+    "
+  >
     <p id="AX" style="color: black; background-color: white">AX:</p>
     <p id="AY" style="color: black; background-color: white">AY:</p>
     <p id="AZ" style="color: black; background-color: white">AZ:</p>
@@ -7,12 +14,33 @@
     <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
     <p id="Step" style="color: black; background-color: white">Step:</p>
   </div>
+  <div
+    style="
+      position: absolute;
+      z-index: 100;
+      bottom: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-auto-rows: 50px;
+    "
+  >
+    <button>left</button>
+    <button id="forward">↑</button>
+    <button>right</button>
+    <button>←</button>
+    <button>↓</button>
+    <button>→</button>
+  </div>
 </template>
 <script>
 import * as THREE from "three";
+import { Line2 } from "three/examples/jsm/lines/Line2.js";
+import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls";
-import map from "@/assets/3D_Model/grand_theft_auto_san_andreas__grove_street.glb";
+import map from "@/assets/3D_Model/warehouse.glb";
+import shelf from "@/assets/3D_Model/shelf.glb";
 import pointer from "@/assets/3D_Model/map_pointer.glb";
 export default {
   mounted() {
@@ -25,7 +53,7 @@ export default {
       75,
       window.innerWidth / window.innerHeight,
       0.1,
-      100
+      1000
     );
     //init render
     var renderer = new THREE.WebGLRenderer();
@@ -33,15 +61,14 @@ export default {
     document.body.appendChild(renderer.domElement);
     //init loader
     var loader = new GLTFLoader();
-    var mapObject;
-    var pointerObject;
     loadMap(map);
-    loadPointer(pointer);
+    //loadPointer(pointer);
+    loadShelf();
     // Add light
     var ambientLight = new THREE.AmbientLight(0xffffff); // Set the ambient light color and intensity
     scene.add(ambientLight);
     //adjust camera
-    var initialY = 10;
+    var initialY = 5;
     adjustCameraPosition();
     // initi PointerLockControls
     var controls = new PointerLockControls(camera, renderer.domElement);
@@ -94,13 +121,34 @@ export default {
       .querySelectorAll("canvas")[0]
       .addEventListener("click", (event) => handleClickOnObject(event));
     //drawing Line
-    drawLine();
+    //drawLine();
     // step counting
-    const stepThreshold = 4;
     let previousAcc = null;
     let stepCount = 0;
+    //adding move buttin Listener
+    let forwardAnimation;
 
+    function startForwardAnimation() {
+      forwardAnimation = requestAnimationFrame(moveForward);
+    }
+
+    function stopForwardAnimation() {
+      cancelAnimationFrame(forwardAnimation);
+    }
+    document
+      .getElementById("forward")
+      .addEventListener("mouseover", startForwardAnimation);
+    document
+      .getElementById("forward")
+      .addEventListener("mouseout", stopForwardAnimation);
     animate();
+    function moveForward() {
+      forwardAnimation = requestAnimationFrame(moveForward);
+
+      // Move camera forward
+      camera.getWorldDirection(cameraDirection);
+      controls.getObject().position.add(cameraDirection.multiplyScalar(0.1));
+    }
     function getMagnitude(acc) {
       const { x, y, z } = acc;
       return Math.sqrt(x * x + y * y + z * z);
@@ -111,18 +159,18 @@ export default {
         function (gltf) {
           gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
           gltf.scene.position.set(0, 0, 0); // Adjust the position of the model
+          gltf.scene.name = "Map";
           scene.add(gltf.scene);
           console.log(gltf.scene);
-          mapObject = gltf.scene;
           const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
           const max = boundingBox.max;
           const min = boundingBox.min;
-          mapConstraint.maxX = max.x;
+          mapConstraint.maxX = max.x - 0.2;
           mapConstraint.maxY = max.y;
-          mapConstraint.maxZ = max.z;
-          mapConstraint.minX = min.x;
+          mapConstraint.maxZ = max.z - 0.2;
+          mapConstraint.minX = min.x + 0.2;
           mapConstraint.minY = min.y;
-          mapConstraint.minZ = min.z;
+          mapConstraint.minZ = min.z + 0.2;
         },
         undefined,
         function (error) {
@@ -136,12 +184,24 @@ export default {
         function (gltf) {
           gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
           gltf.scene.position.set(44, 10, 0); // Adjust the position of the model
-          pointerObject = gltf.scene;
           scene.add(gltf.scene);
           console.log(gltf.scene);
-          const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
-          const boundingBoxHelper = new THREE.Box3Helper(boundingBox, 0xff0000);
-          //scene.add(boundingBoxHelper);
+        },
+        undefined,
+        function (error) {
+          console.error(error);
+        }
+      );
+    }
+    function loadShelf() {
+      loader.load(
+        shelf,
+        function (gltf) {
+          gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
+          gltf.scene.position.set(-25, 0, 0); // Adjust the position of the model
+          gltf.scene.name = "Shelf"+1;
+          scene.add(gltf.scene);
+          console.log(gltf.scene);
         },
         undefined,
         function (error) {
@@ -222,6 +282,7 @@ export default {
     }
     function handleMotion(event) {
       const activeThreshold = 1;
+      const stepThreshold = 0.3;
       if (
         Math.abs(event.acceleration.x) < activeThreshold &&
         Math.abs(event.acceleration.x) < activeThreshold &&
@@ -235,13 +296,6 @@ export default {
       document.getElementById("AY").innerHTML = "AY:" + event.acceleration.y;
       document.getElementById("AZ").innerHTML = "AZ:" + event.acceleration.z;
       // update camera's positoin based on acceleration values
-      // camera.getWorldDirection(cameraDirection);
-      // controls
-      //   .getObject()
-      //   .position.add(
-      //     cameraDirection.multiplyScalar(-event.acceleration.z * 0.3)
-      //   );
-      // controls.getObject().position.y = initialY; // Set the y position to the desired value
       document.getElementById("camera").innerHTML =
         "X:" +
         camera.position.x +
@@ -271,27 +325,13 @@ export default {
           camera.getWorldDirection(cameraDirection);
           controls
             .getObject()
-            .position.add(cameraDirection.multiplyScalar(0.1));
+            .position.add(cameraDirection.multiplyScalar(0.01));
         }
       }
 
       // Update previous acceleration
       previousAcc = currentAcc;
-    }
-    function updateCameraPosition() {
-      camera.position.x = Math.max(
-        mapConstraint.minX,
-        Math.min(mapConstraint.maxX, camera.position.x)
-      );
-      camera.position.y = Math.max(
-        mapConstraint.minY,
-        Math.min(mapConstraint.maxY, camera.position.y)
-      );
-      camera.position.z = Math.max(
-        mapConstraint.minZ,
-        Math.min(mapConstraint.maxZ, camera.position.z)
-      );
-    }
+    } 
     function updateRaycaster() {
       // Update raycaster's origin and direction based on the camera's position and direction
       raycaster.setFromCamera(mouse, camera);
@@ -305,32 +345,20 @@ export default {
       var distanceThreshold = 100;
       // Handle collisions
       if (intersects.length > 0 && intersects[0].distance < distanceThreshold) {
-        //console.log(intersects)
-        intersects.forEach((intersect) => {
-          console.log(findTopParent(intersect.object));
-          if (
-            findTopParent(intersect.object).name ==
-            mapObject.children[0].children[0].name
-          ) {
-            //console.log("It is background");
-          }
-          if (
-            findTopParent(intersect.object).name ==
-            pointerObject.children[0].children[0].name
-          ) {
-            console.log("It is pointer");
-            alert("it is pointer");
-          }
-        });
+        console.log(intersects);
+        for (var i = 0; i < intersects.length; i++) {
+          var intersect = intersects[i];
+          var topObject = findTopParent(intersect.object);
+          console.log(topObject.name);
+        }
       }
     }
     function findTopParent(object) {
       let topParent = object;
 
-      while (topParent.parent.name !== "Sketchfab_model") {
+      while (topParent.parent.name !== '' ) {
         topParent = topParent.parent;
       }
-
       return topParent;
     }
     function handleClickOnObject(event) {
@@ -340,21 +368,18 @@ export default {
       performCollisionDetection();
     }
     function drawLine() {
-      const material = new THREE.LineBasicMaterial({
-        color: 0xff00ff,
-        linewidth: 10,
-        linecap: "round", //ignored by WebGLRenderer
-        linejoin: "round", //ignored by WebGLRenderer
+      const points = [0, 7, 0, 0, 7, 10, 44, 7, 0];
+      // points.push(new THREE.Vector3(0, 7, 0));
+      // points.push(new THREE.Vector3(0, 7, 10));
+      // points.push(new THREE.Vector3(44, 7, 0));
+      var gemotry = new LineGeometry();
+      gemotry.setPositions(points);
+      var material = new LineMaterial({
+        color: 0xdd2222,
+        linewidth: 2,
+        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
       });
-
-      const points = [];
-      points.push(new THREE.Vector3(0, 7, 0));
-      points.push(new THREE.Vector3(0, 7, 10));
-      points.push(new THREE.Vector3(44, 7, 0));
-
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-      const line = new THREE.Line(geometry, material);
+      var line = new Line2(gemotry, material);
       scene.add(line);
     }
     function animate() {
@@ -404,7 +429,6 @@ export default {
       if (movement.rotateRight) {
         controls.getObject().rotation.y -= rotateSpeed;
       }
-      updateCameraPosition();
       //performCollisionDetection();
       renderer.render(scene, camera);
     }
