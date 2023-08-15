@@ -1,12 +1,10 @@
 <template>
-  <div
-    style="
+  <div style="
       position: absolute;
       z-index: 100;
       background-color: white;
       opacity: 0.5;
-    "
-  >
+    ">
     <p id="AX" style="color: black; background-color: white">AX:</p>
     <p id="AY" style="color: black; background-color: white">AY:</p>
     <p id="AZ" style="color: black; background-color: white">AZ:</p>
@@ -14,16 +12,14 @@
     <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
     <p id="Step" style="color: black; background-color: white">Step:</p>
   </div>
-  <div
-    style="
+  <div style="
       position: absolute;
       z-index: 100;
       bottom: 0;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       grid-auto-rows: 50px;
-    "
-  >
+    ">
     <button>left</button>
     <button id="forward">↑</button>
     <button>right</button>
@@ -199,7 +195,7 @@ export default {
         function (gltf) {
           gltf.scene.scale.set(1, 1, 1); // Adjust the scale of the model
           gltf.scene.position.set(-25, 0, 0); // Adjust the position of the model
-          gltf.scene.name = "Shelf"+1;
+          gltf.scene.name = "Shelf" + 1;
           scene.add(gltf.scene);
           console.log(gltf.scene);
         },
@@ -331,7 +327,21 @@ export default {
 
       // Update previous acceleration
       previousAcc = currentAcc;
-    } 
+    }
+    function updateCameraPosition() {
+      camera.position.x = Math.max(
+        mapConstraint.minX,
+        Math.min(mapConstraint.maxX, camera.position.x)
+      );
+      camera.position.y = Math.max(
+        mapConstraint.minY,
+        Math.min(mapConstraint.maxY, camera.position.y)
+      );
+      camera.position.z = Math.max(
+        mapConstraint.minZ,
+        Math.min(mapConstraint.maxZ, camera.position.z)
+      );
+    }
     function updateRaycaster() {
       // Update raycaster's origin and direction based on the camera's position and direction
       raycaster.setFromCamera(mouse, camera);
@@ -350,13 +360,14 @@ export default {
           var intersect = intersects[i];
           var topObject = findTopParent(intersect.object);
           console.log(topObject.name);
+          break;
         }
       }
     }
     function findTopParent(object) {
       let topParent = object;
 
-      while (topParent.parent.name !== '' ) {
+      while (topParent.parent.name !== '') {
         topParent = topParent.parent;
       }
       return topParent;
@@ -429,6 +440,7 @@ export default {
       if (movement.rotateRight) {
         controls.getObject().rotation.y -= rotateSpeed;
       }
+      updateCameraPosition();
       //performCollisionDetection();
       renderer.render(scene, camera);
     }
