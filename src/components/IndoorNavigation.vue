@@ -343,11 +343,11 @@ export default {
             // update camera's positoin based on acceleration values
             document.getElementById("camera").innerHTML =
                 "X:" +
-                camera.position.x +
+                this.camera.position.x +
                 "\nY:" +
-                camera.position.y +
+                this.camera.position.y +
                 "\nZ:" +
-                camera.position.z;
+                this.camera.position.z;
             const acc = event.accelerationIncludingGravity;
             if (!acc) return;
             const currentAcc = this.getMagnitude(acc);
@@ -356,12 +356,12 @@ export default {
                 const accDiff = Math.abs(currentAcc - this.previousAcc);
                 document.getElementById("accDiff").innerHTML = "accDiff:" + accDiff;
                 if (accDiff > stepThreshold) {
-                    this.stepCount++;
-                    this.camera.getWorldDirection(cameraDirection);
+                    this.motion.stepCount++;
+                    this.camera.getWorldDirection(this.cameraDirection);
                     this.controls
                         .getObject()
-                        .position.add(cameraDirection.multiplyScalar(0.01));
-                        document.getElementById("Step").innerHTML = "Step" + stepCount;
+                        .position.add(this.cameraDirection.multiplyScalar(0.01));
+                        document.getElementById("Step").innerHTML = "Step" + this.motion.stepCount;
                 }
             }
             // Update previous acceleration
