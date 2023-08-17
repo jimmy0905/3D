@@ -77,6 +77,7 @@ export default {
         return {
             points: [],
             shelfs: [],
+            path: [],
             startPoint: null,
             startPointSelectedIndex: null,
             destinationPoint: null,
@@ -136,6 +137,7 @@ export default {
                 const data = await response.json();
                 this.points = data.points;
                 this.shelfs = data.shelfs;
+                this.path = data.path;
                 this.startPoint = this.points[0].name;
                 this.startPointSelectedIndex = 0;
                 this.destinationPoint = this.points[1].name;
@@ -154,6 +156,8 @@ export default {
                 this.points[this.startPointSelectedIndex].y,
                 this.points[this.startPointSelectedIndex].z
             );
+            scene.remove(scene.getObjectByName("Path"));
+            this.loadPath();
         },
         changeDestinationPoint(index) {
             this.destinationPointSelectedIndex = index;
@@ -162,6 +166,8 @@ export default {
                 this.points[this.destinationPointSelectedIndex].y,
                 this.points[this.destinationPointSelectedIndex].z
             );
+            scene.remove(scene.getObjectByName("Path"));
+            this.loadPath();
         },
         init3D() {
             scene.background = new THREE.Color(0xabcdef);
@@ -176,6 +182,7 @@ export default {
             this.loadMap();
             this.loadShelf();
             this.loadPointer();
+            this.loadPath();
             this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
         },
         initLisnter() {
@@ -206,7 +213,6 @@ export default {
                         gltf.scene.position.set(0, 0, 0);
                         gltf.scene.name = "Map";
                         scene.add(gltf.scene);
-                        console.log(gltf.scene);
                         const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
                         const max = boundingBox.max;
                         const min = boundingBox.min;
@@ -232,6 +238,14 @@ export default {
                         return function (gltf) {
                             gltf.scene.scale.set(1, 1, 1);
                             gltf.scene.position.set(shelfData.location.x, shelfData.location.y, shelfData.location.z);
+                            var aplha = shelfData.rotation.aplha;
+                            var beta = shelfData.rotation.beta == 0 ? 0 : 135;
+                            var gamma = shelfData.rotation.gamma;
+                            gltf.scene.rotation.set(
+                                aplha,
+                                beta,
+                                gamma
+                            )
                             gltf.scene.name = shelfData.name;
                             scene.add(gltf.scene);
                         };
@@ -253,9 +267,7 @@ export default {
                         gltf.scene.position.set(location.x, location.y, location.z);
                         gltf.scene.name = "Pointer";
                         pointerObject = gltf.scene;
-                        console.log(pointerObject)
                         scene.add(gltf.scene);
-                        console.log(gltf.scene);
                     };
                 })(this.points[this.destinationPointSelectedIndex]),
                 undefined,
@@ -263,6 +275,26 @@ export default {
                     console.error(error);
                 }
             );
+        },
+        loadPath() {
+            var selectedPath = this.path[this.startPointSelectedIndex][this.destinationPointSelectedIndex];
+            var joints = []
+            for (var i = 0; i < selectedPath.length; i++) {
+                joints.push(selectedPath[i].x);
+                joints.push(selectedPath[i].y);
+                joints.push(selectedPath[i].z);
+            }
+            var gemotry = new LineGeometry();
+            gemotry.setPositions(joints);
+            var material = new LineMaterial({
+                color: 0xdd2222,
+                linewidth: 5,
+                resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+            });
+            var line = new Line2(gemotry, material);
+            line.name = "Path";
+            console.log(line)
+            scene.add(line);
         },
         handleKeyDown(keyCode) {
             switch (keyCode) {
@@ -361,7 +393,7 @@ export default {
                     this.controls
                         .getObject()
                         .position.add(this.cameraDirection.multiplyScalar(0.01));
-                        document.getElementById("Step").innerHTML = "Step" + this.motion.stepCount;
+                    document.getElementById("Step").innerHTML = "Step" + this.motion.stepCount;
                 }
             }
             // Update previous acceleration
