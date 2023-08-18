@@ -419,12 +419,10 @@ export default {
             for (let i = 0; i < this.objects3D.length; i++) {
                 const object = this.objects3D[i];
                 const objectBox = new THREE.Box3().setFromObject(object);
-
                 // Check if the object's bounding box is valid
                 if (objectBox.isEmpty()) {
                     continue; // Skip this iteration if the box is empty
                 }
-
                 const objectCenter = new THREE.Vector3();
                 objectBox.getCenter(objectCenter);
 
@@ -432,7 +430,6 @@ export default {
                 if (distance <= range && cameraFrustum.intersectsBox(objectBox)) {
                     // Camera is intersecting with the current object within the desired range
                     console.log('Camera is surrounded by object:', object.name + "distance:" + distance);
-                    alert('Camera is surrounded by object:', object.name + "distance:" + distance);
                     // Perform necessary actions
                     return true;
                 }
