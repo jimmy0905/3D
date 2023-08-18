@@ -78,11 +78,11 @@ export default {
             points: [],
             shelfs: [],
             path: [],
+            objects3D: [],
             startPoint: null,
             startPointSelectedIndex: null,
             destinationPoint: null,
             destinationPointSelectedIndex: null,
-
             camera: new THREE.PerspectiveCamera(
                 75,
                 window.innerWidth / window.innerHeight,
@@ -122,7 +122,8 @@ export default {
                 forwardAnimation: null
             }
             ,
-            raycaster: new THREE.Raycaster(),
+            objectRaycaster: new THREE.Raycaster(),
+            cameraRaycaster: new THREE.Raycaster(),
             mouse: new THREE.Vector2(),
             cameraDirection: new THREE.Vector3(),
         };
@@ -207,7 +208,7 @@ export default {
         loadMap() {
             this.loader.load(
                 map,
-                (function (mapConstraint) {
+                (function (mapConstraint, objects3D) {
                     return function (gltf) {
                         gltf.scene.scale.set(1, 1, 1);
                         gltf.scene.position.set(0, 0, 0);
@@ -222,8 +223,9 @@ export default {
                         mapConstraint.minX = min.x + 0.2;
                         mapConstraint.minY = min.y;
                         mapConstraint.minZ = min.z + 0.2;
+
                     };
-                })(this.mapConstraint),
+                })(this.mapConstraint, this.objects3D),
                 undefined,
                 function (error) {
                     console.error(error);
@@ -234,7 +236,7 @@ export default {
             for (var i = 0; i < this.shelfs.length; i++) {
                 this.loader.load(
                     shelfModel,
-                    (function (shelfData) {
+                    (function (shelfData, objects3D) {
                         return function (gltf) {
                             gltf.scene.scale.set(1, 1, 1);
                             gltf.scene.position.set(shelfData.location.x, shelfData.location.y, shelfData.location.z);
@@ -248,15 +250,15 @@ export default {
                             )
                             gltf.scene.name = shelfData.name;
                             scene.add(gltf.scene);
+                            objects3D.push(gltf.scene);
                         };
-                    })(this.shelfs[i]),
+                    })(this.shelfs[i], this.objects3D),
                     undefined,
                     function (error) {
                         console.error(error);
                     }
                 );
             }
-
         },
         loadPointer() {
             this.loader.load(
@@ -293,7 +295,6 @@ export default {
             });
             var line = new Line2(gemotry, material);
             line.name = "Path";
-            console.log(line)
             scene.add(line);
         },
         handleKeyDown(keyCode) {
@@ -387,6 +388,9 @@ export default {
             if (this.previousAcc) {
                 const accDiff = Math.abs(currentAcc - this.previousAcc);
                 document.getElementById("accDiff").innerHTML = "accDiff:" + accDiff;
+                if (this.checkCameraCollision()) {
+                    return undefined;
+                }
                 if (accDiff > stepThreshold) {
                     this.motion.stepCount++;
                     this.camera.getWorldDirection(this.cameraDirection);
@@ -403,7 +407,41 @@ export default {
             const { x, y, z } = acc;
             return Math.sqrt(x * x + y * y + z * z);
         },
+        checkCameraCollision() {
+            const cameraFrustum = new THREE.Frustum();
+            const cameraViewProjectionMatrix = new THREE.Matrix4().multiplyMatrices(
+                this.camera.projectionMatrix,
+                this.camera.matrixWorldInverse
+            );
+            cameraFrustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
+            const range = 4; // Define the desired detection range
+            // Check each object for intersection with the camera frustum
+            for (let i = 0; i < this.objects3D.length; i++) {
+                const object = this.objects3D[i];
+                const objectBox = new THREE.Box3().setFromObject(object);
+
+                // Check if the object's bounding box is valid
+                if (objectBox.isEmpty()) {
+                    continue; // Skip this iteration if the box is empty
+                }
+
+                const objectCenter = new THREE.Vector3();
+                objectBox.getCenter(objectCenter);
+
+                const distance = this.camera.position.distanceTo(objectCenter);
+                if (distance <= range && cameraFrustum.intersectsBox(objectBox)) {
+                    // Camera is intersecting with the current object within the desired range
+                    console.log('Camera is surrounded by object:', object.name + "distance:" + distance);
+                    alert('Camera is surrounded by object:', object.name + "distance:" + distance);
+                    // Perform necessary actions
+                    return true;
+                }
+            }
+        },
         updateCameraPosition() {
+            if (this.checkCameraCollision()) {
+                return undefined;
+            }
             this.camera.position.x = Math.max(
                 this.mapConstraint.minX,
                 Math.min(this.mapConstraint.maxX, this.camera.position.x)
@@ -434,16 +472,16 @@ export default {
             }
             return topParent;
         },
-        updateRaycaster() {
-            this.raycaster.setFromCamera(this.mouse, this.camera);
+        updateObjectRaycaster() {
+            this.objectRaycaster.setFromCamera(this.mouse, this.camera);
         },
         performCollisionDetection() {
             // Update the raycaster
-            this.updateRaycaster();
+            this.updateObjectRaycaster();
 
             // Perform intersection test
-            const intersects = this.raycaster.intersectObjects(scene.children, true);
-            var distanceThreshold = 100;
+            const intersects = this.objectRaycaster.intersectObjects(scene.children, true);
+            var distanceThreshold = 10;
             // Handle collisions
             if (intersects.length > 0 && intersects[0].distance < distanceThreshold) {
                 console.log(intersects);
