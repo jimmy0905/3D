@@ -52,6 +52,7 @@
 
 label {
     color: white;
+    padding: 4px;
 }
 
 select {
@@ -60,7 +61,6 @@ select {
 </style>
   
 <script>
-import { ref, onMounted } from "vue";
 import * as THREE from "three";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
