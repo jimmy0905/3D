@@ -10,10 +10,12 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "portal-vue": "^3.0.0-beta.0",
     "three": "^0.155.0",
     "three-fatline": "^0.6.1",
     "three.meshline": "^1.4.0",
-    "vue": "^3.3.4"
+    "vue": "^3.3.4",
+    "vue3-carousel": "^0.3.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

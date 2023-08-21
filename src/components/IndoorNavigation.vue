@@ -1,6 +1,5 @@
 <template>
     <div class="InputSection">
-
         <div class="Selection">
             <label for="sPoint">Start Point</label>
             <select v-model="startPoint" id="sPoint" @change="changeStartPoint($event.target.selectedIndex)">
@@ -29,6 +28,9 @@
         <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
         <p id="Step" style="color: black; background-color: white">Step:</p>
     </div>
+    <Modal v-if="showModal" :products="modalProducts" :imageSrc="modalImageSrc" :title="modalTitle" :showModal="showModal"
+        :closeModal="closeModal" style="z-index: 100;">
+    </Modal>
 </template>
   
 <style>
@@ -70,11 +72,19 @@ import { PointerLockControls } from "three/examples/jsm/controls/PointerLockCont
 import map from "@/assets/3D_Model/warehouse.glb";
 import shelfModel from "@/assets/3D_Model/shelf.glb";
 import pointer from "@/assets/3D_Model/map_pointer.glb";
+import Modal from "@/components/Modal.vue"
 var scene = new THREE.Scene();
 var pointerObject = null;
 export default {
+    components: {
+        Modal
+    },
     data() {
         return {
+            showModal: false,
+            modalTitle: "title",
+            modalProducts: [],
+            modalImageSrc: [],
             points: [],
             shelfs: [],
             path: [],
@@ -90,7 +100,8 @@ export default {
                 1000
             ),
             renderer: new THREE.WebGLRenderer(),
-            ambientLight: new THREE.AmbientLight(0xffffff),
+            ambientLight: new THREE.AmbientLight(0xffffff,0.8),
+            pointLight: new THREE.PointLight(0xffffff,0.3,0,0.0001),
             loader: new GLTFLoader(),
             controls: null,
             cameraDirection: new THREE.Vector3(),
@@ -175,6 +186,11 @@ export default {
             this.renderer.setSize(window.innerWidth, window.innerHeight);
             document.body.appendChild(this.renderer.domElement);
             scene.add(this.ambientLight);
+            this.pointLight.position.set(0, 10, 0);
+            this.pointLight.castShadow = true;
+            scene.add(this.pointLight);
+            let pointLightHelper = new THREE.PointLightHelper(this.pointLight)
+            scene.add(pointLightHelper)
             this.setCameraPosition(
                 this.points[this.startPointSelectedIndex].x,
                 this.points[this.startPointSelectedIndex].y,
@@ -208,7 +224,7 @@ export default {
         loadMap() {
             this.loader.load(
                 map,
-                (function (mapConstraint, objects3D) {
+                (function (mapConstraint) {
                     return function (gltf) {
                         gltf.scene.scale.set(1, 1, 1);
                         gltf.scene.position.set(0, 0, 0);
@@ -217,15 +233,15 @@ export default {
                         const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
                         const max = boundingBox.max;
                         const min = boundingBox.min;
-                        mapConstraint.maxX = max.x - 0.2;
+                        mapConstraint.maxX = max.x - 0.3;
                         mapConstraint.maxY = max.y;
-                        mapConstraint.maxZ = max.z - 0.2;
-                        mapConstraint.minX = min.x + 0.2;
+                        mapConstraint.maxZ = max.z - 0.3;
+                        mapConstraint.minX = min.x - 0.3;
                         mapConstraint.minY = min.y;
-                        mapConstraint.minZ = min.z + 0.2;
+                        mapConstraint.minZ = min.z + 0.3;
 
                     };
-                })(this.mapConstraint, this.objects3D),
+                })(this.mapConstraint),
                 undefined,
                 function (error) {
                     console.error(error);
@@ -361,12 +377,16 @@ export default {
             this.camera.rotation.set(beta, alpha, -gamma);
         },
         handleMotion(event) {
-            const activeThreshold = 1;
+            const activeLowerThreshold = 1;
+            const activeUpperThreshold = 3;
             const stepThreshold = 0.3;
             if (
-                Math.abs(event.acceleration.x) < activeThreshold &&
-                Math.abs(event.acceleration.x) < activeThreshold &&
-                Math.abs(event.acceleration.x) < activeThreshold
+                (Math.abs(event.acceleration.x) < activeLowerThreshold &&
+                    Math.abs(event.acceleration.y) < activeLowerThreshold &&
+                    Math.abs(event.acceleration.z) < activeLowerThreshold) ||
+                (Math.abs(event.acceleration.x) > activeUpperThreshold &&
+                    Math.abs(event.acceleration.y) > activeUpperThreshold &&
+                    Math.abs(event.acceleration.z) > activeUpperThreshold)
             ) {
                 return;
             }
@@ -486,6 +506,14 @@ export default {
                     var intersect = intersects[i];
                     var topObject = this.findTopParent(intersect.object);
                     console.log(topObject.name);
+                    console.log(topObject.name.split(' '));
+                    this.modalTitle = topObject.name;
+                    let topObjectNameArray = topObject.name.split(' ');
+                    let index = Number(topObjectNameArray[1]);
+                    console.log(this.shelfs[index].img);
+                    this.modalImageSrc = this.shelfs[index].img;
+                    this.modalProducts = this.shelfs[index].products;
+                    this.openModal();
                     break;
                 }
             }
@@ -537,6 +565,12 @@ export default {
             }
             this.updateCameraPosition();
             this.renderer.render(scene, this.camera);
+        },
+        openModal() {
+            this.showModal = true;
+        },
+        closeModal() {
+            this.showModal = false;
         }
     },
 }
