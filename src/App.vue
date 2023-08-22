@@ -3,7 +3,7 @@ import HelloWorld from './components/HelloWorld.vue'
 import TheWelcome from './components/TheWelcome.vue'
 //import ThreeJS from './components/Three.JS.vue'
 import threejs from './components/threeJS.vue'
-import RequestPermission from './components/requestPermission.vue'
+import RequestPermission from './components/RequestPermission.vue'
 import indoorNavigation from './components/IndoorNavigation.vue'
 </script>
 

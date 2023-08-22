@@ -1,15 +1,11 @@
 <template>
     <div class="modal" v-if="showModal">
-        <div class="modal-backdrop" @click="closeModal"></div>
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3>{{ title }}</h3>
-                    <button @click="closeModal">
-                        <span class="material-symbols-outlined">
-                            close
-                        </span>
-                    </button>
+                    <h1 class="modal-title fs-5">{{ title }}</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                            @click="closeModal"></button>
                 </div>
                 <div class="modal-body">
                     <Carousel :autoplay="5000" :wrap-around="true" v-if="imageSrc.length > 0">
@@ -21,7 +17,7 @@
                             <Pagination />
                         </template>
                     </Carousel>
-                    <table border="1" style="width: 100%;">
+                    <table class="table">
                         <thead>
                             <tr>
                                 <th>Product</th>
@@ -92,18 +88,4 @@ export default {
     padding: 0;
 }
 
-.modal-content {
-    border-radius: 10px;
-    max-height: 70vh;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-}
-
-button {
-    border: none;
-    background-color: transparent;
-}
 </style>

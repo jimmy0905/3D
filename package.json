@@ -10,6 +10,7 @@
     "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
+    "bootstrap": "^5.3.1",
     "portal-vue": "^3.0.0-beta.0",
     "three": "^0.155.0",
     "three-fatline": "^0.6.1",

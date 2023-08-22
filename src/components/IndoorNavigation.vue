@@ -1,17 +1,23 @@
 <template>
-    <div class="InputSection">
-        <div class="Selection">
-            <label for="sPoint">Start Point</label>
-            <select v-model="startPoint" id="sPoint" @change="changeStartPoint($event.target.selectedIndex)">
-                <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
-            </select>
+    <div class="InputSection d-flex justify-content-evenly py-2">
+        <div class="col-5">
+            <div class="Selection input-group">
+                <label class="input-group-text" for="sPoint">Start Point</label>
+                <select class="form-select" v-model="startPoint" id="sPoint"
+                    @change="changeStartPoint($event.target.selectedIndex)">
+                    <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
+                </select>
+            </div>
         </div>
 
-        <div class="Selection">
-            <label for="dPoint">End Point</label>
-            <select v-model="destinationPoint" id="dPoint" @change="changeDestinationPoint($event.target.selectedIndex)">
-                <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
-            </select>
+        <div class="col-5">
+            <div class="Selection input-group col-5">
+                <label class="input-group-text" for="dPoint">End Point</label>
+                <select class="form-select" v-model="destinationPoint" id="dPoint"
+                    @change="changeDestinationPoint($event.target.selectedIndex)">
+                    <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
+                </select>
+            </div>
         </div>
     </div>
     <div style="
@@ -35,30 +41,11 @@
   
 <style>
 .InputSection {
-    display: flex;
-    justify-content: space-evenly;
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-}
-
-.Selection {
+    width: 100vw;
     background-color: #094fA3;
-    width: 40vw;
-    padding: 10px;
-    display: flex;
-    justify-content: space-evenly;
-    border-radius: 5px;
-}
-
-label {
-    color: white;
-    padding: 4px;
-}
-
-select {
-    width: 45%;
 }
 </style>
   
@@ -100,8 +87,8 @@ export default {
                 1000
             ),
             renderer: new THREE.WebGLRenderer(),
-            ambientLight: new THREE.AmbientLight(0xffffff,0.8),
-            pointLight: new THREE.PointLight(0xffffff,0.3,0,0.0001),
+            ambientLight: new THREE.AmbientLight(0xffffff, 0.8),
+            pointLight: new THREE.PointLight(0xffffff, 0.3, 0, 0.0001),
             loader: new GLTFLoader(),
             controls: null,
             cameraDirection: new THREE.Vector3(),
@@ -236,10 +223,9 @@ export default {
                         mapConstraint.maxX = max.x - 0.3;
                         mapConstraint.maxY = max.y;
                         mapConstraint.maxZ = max.z - 0.3;
-                        mapConstraint.minX = min.x - 0.3;
+                        mapConstraint.minX = min.x + 0.3;
                         mapConstraint.minY = min.y;
                         mapConstraint.minZ = min.z + 0.3;
-
                     };
                 })(this.mapConstraint),
                 undefined,
@@ -314,6 +300,7 @@ export default {
             scene.add(line);
         },
         handleKeyDown(keyCode) {
+
             switch (keyCode) {
                 case "KeyW":
                     this.movement.forward = true;
@@ -333,6 +320,9 @@ export default {
                 case "KeyE":
                     this.movement.rotateRight = true;
                     break;
+            }
+            if (this.checkCameraCollision()) {
+                this.movement.forward = false;
             }
         },
         handleKeyUp(keyCode) {
@@ -434,7 +424,7 @@ export default {
                 this.camera.matrixWorldInverse
             );
             cameraFrustum.setFromProjectionMatrix(cameraViewProjectionMatrix);
-            const range = 4; // Define the desired detection range
+            const range = 2.5; // Define the desired detection range
             // Check each object for intersection with the camera frustum
             for (let i = 0; i < this.objects3D.length; i++) {
                 const object = this.objects3D[i];
@@ -564,6 +554,7 @@ export default {
                 this.controls.getObject().rotation.y -= rotateSpeed;
             }
             this.updateCameraPosition();
+
             this.renderer.render(scene, this.camera);
         },
         openModal() {

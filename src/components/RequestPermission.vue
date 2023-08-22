@@ -1,11 +1,22 @@
 <template>
     <div>
         <div v-if="isModalOpen" class="modal">
-            <div class="modal-content">
-                <span class="close" @click="closeModal">&times;</span>
-                <h2>Request Permission</h2>
-                <button @click="requestDeviceMotion">DeviceMotion</button>
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5">Request Permission</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+                            @click="closeModal"></button>
+                    </div>
+                    <button type="button" class="btn btn-primary my-3 mx-auto" @click="requestDeviceMotion"
+                        style='max-width:200px'>Request Permission</button>
+                    <div class="modal-footer">
+                        <p>We need some permission to run the navigation</p>
+                    </div>
+
+                </div>
             </div>
+
         </div>
     </div>
 </template>
@@ -15,12 +26,6 @@ export default {
     data() {
         return {
             isModalOpen: true,
-            alpha : 0,
-            beta : 0,
-            gamma : 0,
-            AccelerationX: 0,
-            AccelerationY: 0,
-            AccelerationZ: 0
         };
     },
     methods: {
@@ -37,21 +42,13 @@ export default {
                     .then(permissionState => {
                         if (permissionState === 'granted') {
                             window.addEventListener('devicemotion', (event) => {
-                                this.alpha = event.alpha;
-                                this.beta = event.beta;
-                                this.gamma = event.gamma;
-                             });
+                            });
                             window.addEventListener('deviceorientation', (event) => {
-                                this.AccelerationX = event.accelerationIncludingGravity.x;
-                                this.AccelerationY = event.accelerationIncludingGravity.y;
-                                this.AccelerationZ = event.accelerationIncludingGravity.z;
-                             });
+                            });
                         }
                     })
                     .catch(console.error);
             } else {
-                // handle regular non iOS 13+ devices
-                console.log("Motion");
             }
         },
         requestDeviceOrientation() {
@@ -68,6 +65,15 @@ export default {
                 console.log("Or");
             }
         }
+    }
+    , mounted() {
+        navigator.permissions.query({ name: "accelerometer" }).then((result) => {
+            if (result.state === "granted") {
+                 this.isModalOpen = false;
+            } else if (result.state === "prompt") {
+            }
+        });
+
     }
 };
 </script>
@@ -105,5 +111,4 @@ export default {
     color: black;
     text-decoration: none;
     cursor: pointer;
-}
-</style>
+}</style>
