@@ -1,8 +1,8 @@
 <template>
-    <div class="InputSection d-flex justify-content-evenly py-2">
+    <div class="InputSection d-flex justify-content-evenly py-2 ">
         <div class="col-5">
-            <div class="Selection input-group">
-                <label class="input-group-text" for="sPoint">Start Point</label>
+            <div class="Selection input-group ">
+                <label class="input-group-text" for="sPoint">Start</label>
                 <select class="form-select" v-model="startPoint" id="sPoint"
                     @change="changeStartPoint($event.target.selectedIndex)">
                     <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
@@ -12,7 +12,7 @@
 
         <div class="col-5">
             <div class="Selection input-group col-5">
-                <label class="input-group-text" for="dPoint">End Point</label>
+                <label class="input-group-text" for="dPoint">End</label>
                 <select class="form-select" v-model="destinationPoint" id="dPoint"
                     @change="changeDestinationPoint($event.target.selectedIndex)">
                     <option v-for="point in points" :value="point.name" :key="point.name">{{ point.name }}</option>
@@ -33,10 +33,12 @@
         <p id="camera" style="color: black; background-color: white">X: Y: Z:</p>
         <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
         <p id="Step" style="color: black; background-color: white">Step:</p>
+        <p id="or" style="color: black; background-color: white"></p>
     </div>
     <Modal v-if="showModal" :products="modalProducts" :imageSrc="modalImageSrc" :title="modalTitle" :showModal="showModal"
         :closeModal="closeModal" style="z-index: 100;">
     </Modal>
+    <div class="fixed-bottom mx-auto"></div>
 </template>
   
 <style>
@@ -62,6 +64,10 @@ import pointer from "@/assets/3D_Model/map_pointer.glb";
 import Modal from "@/components/Modal.vue"
 var scene = new THREE.Scene();
 var pointerObject = null;
+var geometry = new THREE.BoxGeometry(4.5, 8, 0.1);
+var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+var wall = new THREE.Mesh(geometry, material);
+wall.name = "Wall"
 export default {
     components: {
         Modal
@@ -90,7 +96,7 @@ export default {
             ambientLight: new THREE.AmbientLight(0xffffff, 0.8),
             pointLight: new THREE.PointLight(0xffffff, 0.3, 0, 0.0001),
             loader: new GLTFLoader(),
-            controls: null,
+            pointerLockControls: null,
             cameraDirection: new THREE.Vector3(),
             mapConstraint: {
                 minX: -100,
@@ -187,7 +193,7 @@ export default {
             this.loadShelf();
             this.loadPointer();
             this.loadPath();
-            this.controls = new PointerLockControls(this.camera, this.renderer.domElement)
+            this.pointerLockControls = new PointerLockControls(this.camera, this.renderer.domElement)
         },
         initLisnter() {
             document.addEventListener("keydown", event => {
@@ -217,15 +223,9 @@ export default {
                         gltf.scene.position.set(0, 0, 0);
                         gltf.scene.name = "Map";
                         scene.add(gltf.scene);
-                        const boundingBox = new THREE.Box3().setFromObject(gltf.scene);
-                        const max = boundingBox.max;
-                        const min = boundingBox.min;
-                        mapConstraint.maxX = max.x - 0.3;
-                        mapConstraint.maxY = max.y;
-                        mapConstraint.maxZ = max.z - 0.3;
-                        mapConstraint.minX = min.x + 0.3;
-                        mapConstraint.minY = min.y;
-                        mapConstraint.minZ = min.z + 0.3;
+                        wall.position.set(0,4,-15)
+                        scene.add(wall);
+
                     };
                 })(this.mapConstraint),
                 undefined,
@@ -235,7 +235,7 @@ export default {
             );
         },
         loadShelf() {
-            for (var i = 0; i < this.shelfs.length; i++) {
+            for (let i = 0; i < this.shelfs.length; i++) {
                 this.loader.load(
                     shelfModel,
                     (function (shelfData, objects3D) {
@@ -250,7 +250,7 @@ export default {
                                 beta,
                                 gamma
                             )
-                            gltf.scene.name = shelfData.name;
+                            gltf.scene.name = "Shelf " + i;
                             scene.add(gltf.scene);
                             objects3D.push(gltf.scene);
                         };
@@ -364,7 +364,8 @@ export default {
             alpha = THREE.MathUtils.degToRad(alpha);
             beta = THREE.MathUtils.degToRad(beta);
             gamma = THREE.MathUtils.degToRad(gamma);
-            this.camera.rotation.set(beta, alpha, -gamma);
+            //this.camera.rotation.set(beta,alpha,gamma);
+            this.camera.rotation.y = alpha;
         },
         handleMotion(event) {
             const activeLowerThreshold = 1;
@@ -404,9 +405,9 @@ export default {
                 if (accDiff > stepThreshold) {
                     this.motion.stepCount++;
                     this.camera.getWorldDirection(this.cameraDirection);
-                    this.controls
+                    this.pointerLockControls
                         .getObject()
-                        .position.add(this.cameraDirection.multiplyScalar(0.01));
+                        .position.add(this.cameraDirection.multiplyScalar(0.05));
                     document.getElementById("Step").innerHTML = "Step" + this.motion.stepCount;
                 }
             }
@@ -446,21 +447,11 @@ export default {
             }
         },
         updateCameraPosition() {
-            if (this.checkCameraCollision()) {
+            if (
+                this.checkCameraCollision()) {
+                this.movement.forward = false;
                 return undefined;
             }
-            this.camera.position.x = Math.max(
-                this.mapConstraint.minX,
-                Math.min(this.mapConstraint.maxX, this.camera.position.x)
-            );
-            this.camera.position.y = Math.max(
-                this.mapConstraint.minY,
-                Math.min(this.mapConstraint.maxY, this.camera.position.y)
-            );
-            this.camera.position.z = Math.max(
-                this.mapConstraint.minZ,
-                Math.min(this.mapConstraint.maxZ, this.camera.position.z)
-            );
         },
         setPointerPosition(x, y, z) {
             pointerObject.position.x = x;
@@ -500,7 +491,6 @@ export default {
                     this.modalTitle = topObject.name;
                     let topObjectNameArray = topObject.name.split(' ');
                     let index = Number(topObjectNameArray[1]);
-                    console.log(this.shelfs[index].img);
                     this.modalImageSrc = this.shelfs[index].img;
                     this.modalProducts = this.shelfs[index].products;
                     this.openModal();
@@ -515,19 +505,19 @@ export default {
 
             if (this.movement.forward) {
                 this.camera.getWorldDirection(this.cameraDirection);
-                this.controls
+                this.pointerLockControls
                     .getObject()
                     .position.add(this.cameraDirection.multiplyScalar(moveSpeed));
             }
             if (this.movement.backward) {
                 this.camera.getWorldDirection(this.cameraDirection);
-                this.controls
+                this.pointerLockControls
                     .getObject()
                     .position.add(this.cameraDirection.multiplyScalar(-moveSpeed));
             }
             if (this.movement.left) {
                 this.camera.getWorldDirection(this.cameraDirection);
-                this.controls
+                this.pointerLockControls
                     .getObject()
                     .position.add(
                         this.cameraDirection
@@ -538,7 +528,7 @@ export default {
             }
             if (this.movement.right) {
                 this.camera.getWorldDirection(this.cameraDirection);
-                this.controls
+                this.pointerLockControls
                     .getObject()
                     .position.add(
                         this.cameraDirection
@@ -548,10 +538,10 @@ export default {
                     );
             }
             if (this.movement.rotateLeft) {
-                this.controls.getObject().rotation.y += rotateSpeed;
+                this.pointerLockControls.getObject().rotation.y += rotateSpeed;
             }
             if (this.movement.rotateRight) {
-                this.controls.getObject().rotation.y -= rotateSpeed;
+                this.pointerLockControls.getObject().rotation.y -= rotateSpeed;
             }
             this.updateCameraPosition();
 
