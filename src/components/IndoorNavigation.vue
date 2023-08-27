@@ -64,10 +64,9 @@ import pointer from "@/assets/3D_Model/map_pointer.glb";
 import Modal from "@/components/Modal.vue"
 var scene = new THREE.Scene();
 var pointerObject = null;
-var geometry = new THREE.BoxGeometry(4.5, 8, 0.1);
-var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-var wall = new THREE.Mesh(geometry, material);
-wall.name = "Wall"
+let wallGeometry = new THREE.BoxGeometry(4.5, 8, 0.1);
+let mapGeomery = null;
+var material = new THREE.MeshBasicMaterial({ color: 0x909090 });
 export default {
     components: {
         Modal
@@ -78,6 +77,8 @@ export default {
             modalTitle: "title",
             modalProducts: [],
             modalImageSrc: [],
+            mapData: [],
+            wallsData: [],
             points: [],
             shelfs: [],
             path: [],
@@ -98,14 +99,6 @@ export default {
             loader: new GLTFLoader(),
             pointerLockControls: null,
             cameraDirection: new THREE.Vector3(),
-            mapConstraint: {
-                minX: -100,
-                minY: -100,
-                minZ: -100,
-                maxX: 100,
-                maxY: 100,
-                maxZ: 100,
-            },
             movement: {
                 forward: false,
                 backward: false,
@@ -140,6 +133,11 @@ export default {
             try {
                 const response = await fetch("https://jimmy0905.github.io/jsonData/A.json");
                 const data = await response.json();
+                console.log(data);
+                this.mapData = data.map;
+                console.log(this.mapData);
+                this.wallsData = data.wall;
+                console.log(this.wallsData);
                 this.points = data.points;
                 this.shelfs = data.shelfs;
                 this.path = data.path;
@@ -182,14 +180,13 @@ export default {
             this.pointLight.position.set(0, 10, 0);
             this.pointLight.castShadow = true;
             scene.add(this.pointLight);
-            let pointLightHelper = new THREE.PointLightHelper(this.pointLight)
-            scene.add(pointLightHelper)
             this.setCameraPosition(
                 this.points[this.startPointSelectedIndex].x,
                 this.points[this.startPointSelectedIndex].y,
                 this.points[this.startPointSelectedIndex].z
             );
             this.loadMap();
+            this.loadWall();
             this.loadShelf();
             this.loadPointer();
             this.loadPath();
@@ -215,24 +212,23 @@ export default {
             this.camera.position.z = z;
         },
         loadMap() {
-            this.loader.load(
-                map,
-                (function (mapConstraint) {
-                    return function (gltf) {
-                        gltf.scene.scale.set(1, 1, 1);
-                        gltf.scene.position.set(0, 0, 0);
-                        gltf.scene.name = "Map";
-                        scene.add(gltf.scene);
-                        wall.position.set(0,4,-15)
-                        scene.add(wall);
-
-                    };
-                })(this.mapConstraint),
-                undefined,
-                function (error) {
-                    console.error(error);
-                }
-            );
+            mapGeomery = new THREE.BoxGeometry(this.mapData.x, this.mapData.y, this.mapData.z);
+            let map = new THREE.Mesh(mapGeomery, material);
+            map.position.set(0, -0.05, 0)
+            scene.add(map);
+        },
+        loadWall() {
+            for (let i = 0; i < this.wallsData.length; i++) {
+                let wall = new THREE.Mesh(wallGeometry, material);
+                console.log(this.wallsData[i]);
+                wall.position.set(this.wallsData[i].location.x, this.wallsData[i].location.y, this.wallsData[i].location.z)
+                var aplha = THREE.MathUtils.degToRad(this.wallsData[i].rotation.aplha);
+                var beta = THREE.MathUtils.degToRad(this.wallsData[i].rotation.beta);
+                var gamma = THREE.MathUtils.degToRad(this.wallsData[i].rotation.gamma);
+                wall.rotation.set(aplha, beta, gamma);
+                scene.add(wall);
+                this.objects3D.push(wall);
+            }
         },
         loadShelf() {
             for (let i = 0; i < this.shelfs.length; i++) {
@@ -242,14 +238,10 @@ export default {
                         return function (gltf) {
                             gltf.scene.scale.set(1, 1, 1);
                             gltf.scene.position.set(shelfData.location.x, shelfData.location.y, shelfData.location.z);
-                            var aplha = shelfData.rotation.aplha;
-                            var beta = shelfData.rotation.beta == 0 ? 0 : 135;
-                            var gamma = shelfData.rotation.gamma;
-                            gltf.scene.rotation.set(
-                                aplha,
-                                beta,
-                                gamma
-                            )
+                            var aplha = THREE.MathUtils.degToRad(shelfData.rotation.aplha);
+                            var beta = THREE.MathUtils.degToRad(shelfData.rotation.beta);
+                            var gamma = THREE.MathUtils.degToRad(shelfData.rotation.gamma);
+                            gltf.scene.rotation.set(aplha, beta, gamma);
                             gltf.scene.name = "Shelf " + i;
                             scene.add(gltf.scene);
                             objects3D.push(gltf.scene);
