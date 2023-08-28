@@ -213,7 +213,7 @@ export default {
         },
         loadMap() {
             mapGeomery = new THREE.BoxGeometry(this.mapData.x, this.mapData.y, this.mapData.z);
-            let map = new THREE.Mesh(mapGeomery, material);
+            let map = new THREE.Mesh(mapGeomery, new THREE.MeshBasicMaterial({ color: 0x808080 }));
             map.position.set(0, -0.05, 0)
             scene.add(map);
         },
