@@ -20,7 +20,7 @@
             </div>
         </div>
     </div>
-    <div style="
+    <!-- <div style="
       position: absolute;
       z-index: 100;
       background-color: white;
@@ -34,9 +34,20 @@
         <p id="accDiff" style="color: black; background-color: white">accDiff:</p>
         <p id="Step" style="color: black; background-color: white">Step:</p>
         <p id="or" style="color: black; background-color: white"></p>
+    </div> -->
+    <div class="row w-100 fixed-bottom m-0" style="opacity: 0.5; position: absolute;">
+        <button type="button" class="btn btn-primary col" @touchstart="this.movement.rotateLeft = true" @touchend="this.movement.rotateLeft = false"><span class="material-symbols-outlined">
+                turn_left
+            </span></button>
+        <button type="button" class="btn btn-primary col" @touchstart="this.movement.forward = true" @touchend="this.movement.forward = false"><span class="material-symbols-outlined">
+                straight
+            </span></button>
+        <button type="button" class="btn btn-primary col" @touchstart="this.movement.rotateRight = true" @touchend="this.movement.rotateRight = false"><span class="material-symbols-outlined">
+                turn_right
+            </span></button>
     </div>
     <Modal v-if="showModal" :products="modalProducts" :imageSrc="modalImageSrc" :title="modalTitle" :showModal="showModal"
-        :closeModal="closeModal" style="z-index: 100;">
+        :closeModal="closeModal" style="z-index: 1050;">
     </Modal>
     <div class="fixed-bottom mx-auto"></div>
 </template>
@@ -67,6 +78,7 @@ var pointerObject = null;
 let wallGeometry = new THREE.BoxGeometry(4.5, 8, 0.1);
 let mapGeomery = null;
 var material = new THREE.MeshBasicMaterial({ color: 0x909090 });
+var lastAlpha = 0;
 export default {
     components: {
         Modal
@@ -133,11 +145,8 @@ export default {
             try {
                 const response = await fetch("https://jimmy0905.github.io/jsonData/A.json");
                 const data = await response.json();
-                console.log(data);
                 this.mapData = data.map;
-                console.log(this.mapData);
                 this.wallsData = data.wall;
-                console.log(this.wallsData);
                 this.points = data.points;
                 this.shelfs = data.shelfs;
                 this.path = data.path;
@@ -220,7 +229,6 @@ export default {
         loadWall() {
             for (let i = 0; i < this.wallsData.length; i++) {
                 let wall = new THREE.Mesh(wallGeometry, material);
-                console.log(this.wallsData[i]);
                 wall.position.set(this.wallsData[i].location.x, this.wallsData[i].location.y, this.wallsData[i].location.z)
                 var aplha = THREE.MathUtils.degToRad(this.wallsData[i].rotation.aplha);
                 var beta = THREE.MathUtils.degToRad(this.wallsData[i].rotation.beta);
@@ -353,11 +361,14 @@ export default {
             var alpha = (event.alpha || 0) - this.orientation.initialAlpha;
             var beta = (event.beta || 0) - this.orientation.initialBeta;
             var gamma = (event.gamma || 0) - this.orientation.initialGamma;
+            var tem = alpha;
+            alpha = alpha - lastAlpha;
+            lastAlpha = tem;
             alpha = THREE.MathUtils.degToRad(alpha);
             beta = THREE.MathUtils.degToRad(beta);
             gamma = THREE.MathUtils.degToRad(gamma);
             //this.camera.rotation.set(beta,alpha,gamma);
-            this.camera.rotation.y = alpha;
+            this.camera.rotation.y += alpha;
         },
         handleMotion(event) {
             const activeLowerThreshold = 1;
@@ -373,24 +384,13 @@ export default {
             ) {
                 return;
             }
-            document.getElementById("AX").innerHTML = "AX:" + event.acceleration.x;
-            document.getElementById("AY").innerHTML = "AY:" + event.acceleration.y;
-            document.getElementById("AZ").innerHTML = "AZ:" + event.acceleration.z;
             // update camera's positoin based on acceleration values
-            document.getElementById("camera").innerHTML =
-                "X:" +
-                this.camera.position.x +
-                "\nY:" +
-                this.camera.position.y +
-                "\nZ:" +
-                this.camera.position.z;
             const acc = event.accelerationIncludingGravity;
             if (!acc) return;
             const currentAcc = this.getMagnitude(acc);
             // If previous acceleration data exists, compare with current acceleration
             if (this.previousAcc) {
                 const accDiff = Math.abs(currentAcc - this.previousAcc);
-                document.getElementById("accDiff").innerHTML = "accDiff:" + accDiff;
                 if (this.checkCameraCollision()) {
                     return undefined;
                 }
@@ -400,7 +400,6 @@ export default {
                     this.pointerLockControls
                         .getObject()
                         .position.add(this.cameraDirection.multiplyScalar(0.05));
-                    document.getElementById("Step").innerHTML = "Step" + this.motion.stepCount;
                 }
             }
             // Update previous acceleration
@@ -432,7 +431,7 @@ export default {
                 const distance = this.camera.position.distanceTo(objectCenter);
                 if (distance <= range && cameraFrustum.intersectsBox(objectBox)) {
                     // Camera is intersecting with the current object within the desired range
-                    console.log('Camera is surrounded by object:', object.name + "distance:" + distance);
+                    // console.log('Camera is surrounded by object:', object.name + "distance:" + distance);
                     // Perform necessary actions
                     return true;
                 }
@@ -478,11 +477,9 @@ export default {
                 for (var i = 0; i < intersects.length; i++) {
                     var intersect = intersects[i];
                     var topObject = this.findTopParent(intersect.object);
-                    console.log(topObject.name);
-                    console.log(topObject.name.split(' '));
-                    this.modalTitle = topObject.name;
                     let topObjectNameArray = topObject.name.split(' ');
                     let index = Number(topObjectNameArray[1]);
+                    this.modalTitle = this.shelfs[index].name;
                     this.modalImageSrc = this.shelfs[index].img;
                     this.modalProducts = this.shelfs[index].products;
                     this.openModal();
